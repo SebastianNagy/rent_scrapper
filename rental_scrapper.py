@@ -27,31 +27,38 @@ PARARIUS_EXTRA_REGEX = re.compile(r"with\s+(\d+)\s+properties\s+for\s+rent", re.
 
 
 if __name__ == "__main__":
-    processes, scrappers = [], []
-    for args in [
-            ("FUNDA", FUNDA_URL, FUNDA_KWARGS),
-            ("PARARIUS DELFT", PARARIUS_DELFT_URL, PARARIUS_KWARGS, PARARIUS_EXTRA_REGEX),
-            ("PARARIUS RIJSWIJK", PARARIUS_RIJSWIJK_URL, PARARIUS_KWARGS, PARARIUS_EXTRA_REGEX),
-            ("VERRA DELFT", VERRA_DELFT_URL, VERRA_KWARGS),
-            ("VERRA RIJSWIJK", VERRA_RIJSWIJK_URL, VERRA_KWARGS),
-            ("VERRA HAGUE", VERRA_HAGUE_URL, VERRA_KWARGS)
-    ]:
-        scrapper = Scrapper(ID=args[0], URL=args[1], findall_kwargs=args[2], extra_regex=args[3] if len(args) > 3 else None)
-        process = mp.Process(target=scrapper.scrapper_loop)
-        process.start()
+    with mp.Manager() as manager:
+        shared_status_dict = manager.dict()
 
-        processes.append(process)
-        scrappers.append(scrapper)
-        time.sleep(1)
+        processes = []
+        for args in [
+                ("FUNDA", FUNDA_URL, FUNDA_KWARGS),
+                ("PARARIUS DELFT", PARARIUS_DELFT_URL, PARARIUS_KWARGS, PARARIUS_EXTRA_REGEX),
+                ("PARARIUS RIJSWIJK", PARARIUS_RIJSWIJK_URL, PARARIUS_KWARGS, PARARIUS_EXTRA_REGEX),
+                ("VERRA DELFT", VERRA_DELFT_URL, VERRA_KWARGS),
+                ("VERRA RIJSWIJK", VERRA_RIJSWIJK_URL, VERRA_KWARGS),
+                ("VERRA HAGUE", VERRA_HAGUE_URL, VERRA_KWARGS)
+        ]:
+            scrapper = Scrapper(
+                ID=args[0],
+                URL=args[1],
+                findall_kwargs=args[2],
+                extra_regex=args[3] if len(args) > 3 else None,
+                shared_status=shared_status_dict)
+            process = mp.Process(target=scrapper.scrapper_loop)
+            process.start()
 
-    telegram_bot.get_updates()  # Initial call to set the offset
-    try:
-        while True:
-            time.sleep(1)  # Keep the main thread alive
-            telegram_bot.update_step(scrappers)
-    except KeyboardInterrupt:
-        log("Main process interrupted. Stopping all scrapers...")
+            processes.append(process)
+            time.sleep(1)
 
-    for process in processes:
-        process.kill()
-        process.join()
+        telegram_bot.get_updates()  # Initial call to set the offset
+        try:
+            while True:
+                time.sleep(1)  # Keep the main thread alive
+                telegram_bot.update_step(shared_status_dict)
+        except KeyboardInterrupt:
+            log("Main process interrupted. Stopping all scrapers...")
+
+        for process in processes:
+            process.kill()
+            process.join()

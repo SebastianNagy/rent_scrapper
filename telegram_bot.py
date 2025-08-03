@@ -3,7 +3,7 @@ import requests
 import multiprocessing as mp
 from dotenv import load_dotenv
 
-from utils import log
+from utils import log, parse_status_update
 
 load_dotenv()  # Load environment variables from .env file
 TELEGRAM_BOT_TOKEN = os.getenv('BOT_TOKEN')
@@ -12,7 +12,7 @@ API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/"
 OFFSET = None  # Initialize offset for updates
 
 
-def update_step(scrappers):
+def update_step(shared_status_dict):
     """
     This function is called periodically to check for new updates from the Telegram Bot API.
     It fetches updates and processes them if any new messages are received.
@@ -29,9 +29,9 @@ def update_step(scrappers):
                     log("Received /status command from chat")
 
                     status_updates = []
-                    for scrapper in scrappers:
-                        status_updates.append(scrapper.get_status_update())
-                    send_telegram_message("\n".join(status_updates))
+                    for scrapper_id, status_data in shared_status_dict.items():
+                        status_updates.append(parse_status_update(scrapper_id, status_data))
+                    send_telegram_message("\n\n".join(status_updates), markdown=True)
 
     except Exception as e:
         log(f"Error in bot_update_step: {e}")
@@ -57,7 +57,7 @@ def get_updates(timeout=30):
         return []
 
 
-def send_telegram_message(message):
+def send_telegram_message(message, markdown=False):
     """Sends a message to the specified Telegram chat using the bot."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         log("Telegram token or chat ID is not set. Cannot send message.")
@@ -66,9 +66,10 @@ def send_telegram_message(message):
     url = API_URL + "sendMessage"
     payload = {
         'chat_id': TELEGRAM_CHAT_ID,
-        'text': message,
-        # 'parse_mode': 'Markdown'
+        'text': message
     }
+    if markdown:
+        payload['parse_mode'] = 'Markdown'
 
     try:
         response = requests.post(url, json=payload)
