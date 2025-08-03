@@ -103,7 +103,7 @@ class Scrapper:
                         change = "increased" if current_count > self.last_known_count else "decreased"
                         message = f"📢 {self.ID} Alert! \n\n" +\
                             f"The number of rentals has *{change}* from {self.last_known_count} to {current_count}.\n\n" +\
-                            f"Check them out here: {URL}"
+                            f"Check them out here: {self.URL}"
 
                         telegram_bot.send_telegram_message(message)
                         self.last_known_count = current_count
@@ -130,7 +130,7 @@ class Scrapper:
                     'last_update': datetime.now(),
                     'count': self.last_known_count,
                 }
-                telegram_bot.send_telegram_message(f"❌ *{ID}* Scraper crashed: {e}", markdown=True)
+                telegram_bot.send_telegram_message(f"❌ *{self.ID}* Scraper crashed: {e}", markdown=True)
 
         self.browser.quit()  # Close the browser when done
         self.browser = None
