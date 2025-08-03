@@ -9,10 +9,8 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 
 import telegram_bot
-from utils import log
+from utils import log, CHECK_INTERVAL_S
 
-
-CHECK_INTERVAL_S = 30
 
 # Set up Selenium to use a Chrome browser
 browser_options = webdriver.ChromeOptions()

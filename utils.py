@@ -1,6 +1,9 @@
 from datetime import datetime
 
 
+CHECK_INTERVAL_S = 30
+
+
 def log(message):
     """Logs messages with a timestamp."""
     print(f"[{datetime.now()}] {message}")
@@ -14,7 +17,7 @@ def parse_status_update(scrapper_id, status_data):
         time_since_update = (datetime.now() - last_update_dt).total_seconds()
 
         count = status_data.get('count')
-        msg = f"✅ *{scrapper_id}*: Running\n" \
+        msg = ("✅" if time_since_update <= 2 * CHECK_INTERVAL_S else "⚠️") + f" *{scrapper_id}*: Running\n" \
             f"   - Last update: {int(time_since_update)}s ago\n" \
             f"   - Current count: {count}"
     elif status == 'initializing':
