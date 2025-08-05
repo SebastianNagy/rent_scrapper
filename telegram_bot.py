@@ -53,7 +53,7 @@ def get_updates(timeout=30):
             OFFSET = result[-1]['update_id'] if OFFSET is None else result[-1]['update_id'] + 1
         return result
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error fetching updates: {e}")
+        print(f"Error fetching updates: {e}")
         return []
 
 
