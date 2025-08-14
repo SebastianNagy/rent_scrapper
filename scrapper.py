@@ -41,7 +41,7 @@ class Scrapper:
         """Scrapes the URL and returns the number of rental listings."""
         try:
             self.browser.get(self.URL)
-            time.sleep(5)  # Allow time for JavaScript to load content
+            time.sleep(10)  # Allow time for JavaScript to load content
 
             html_content = self.browser.page_source
             soup = BeautifulSoup(html_content, 'html.parser')
@@ -105,7 +105,8 @@ class Scrapper:
                             f"The number of rentals has *{change}* from {self.last_known_count} to {current_count}.\n\n" +\
                             f"Check them out here: {self.URL}"
 
-                        telegram_bot.send_telegram_message(message)
+                        if change == "increased":
+                            telegram_bot.send_telegram_message(message)
                         self.last_known_count = current_count
                     elif self.last_known_count is None:
                         # If the first check failed but this one succeeded
